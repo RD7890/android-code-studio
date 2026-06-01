@@ -21,6 +21,9 @@ on:
       - '.github/workflows/crowdin_contributors.yml'
   workflow_dispatch: { }
 
+permissions:
+  contents: write
+
 jobs:
   build_release_apk:
     name: Build Debug APK
@@ -62,29 +65,25 @@ jobs:
           SIGNING_STORE_PASSWORD: "123456"
           SIGNING_KEY_PASSWORD: "123456"
         run: ./gradlew :core:app:assembleDebug
-      - name: List APK files
-        run: find core/app/build/outputs/apk/ -name "*.apk" | head -20
-      - name: Upload arm64-v8a Debug APK
-        uses: actions/upload-artifact@v4
+      - name: Get version name
+        id: version
+        run: |
+          VERSION=
+          echo "name=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: apk-arm64-v8a-debug
-          path: core/app/build/outputs/apk/debug/*arm64-v8a*.apk
-        if: always()
-      - name: Upload armeabi-v7a Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-armeabi-v7a-debug
-          path: core/app/build/outputs/apk/debug/*armeabi-v7a*.apk
-        if: always()
-      - name: Upload x86_64 Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-x86_64-debug
-          path: core/app/build/outputs/apk/debug/*x86_64*.apk
-        if: always()
-      - name: Upload universal Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-universal-debug
-          path: core/app/build/outputs/apk/debug/*universal*.apk
-        if: always()
+          tag_name: v${{ steps.version.outputs.name }}-build.${{ github.run_number }}
+          name: "v${{ steps.version.outputs.name }} (Build #${{ github.run_number }})"
+          body: |
+            **Automated debug build**
+            - Branch: `${{ github.ref_name }}`
+            - Commit: `${{ github.sha }}`
+            - Run: #${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: |
+            core/app/build/outputs/apk/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
