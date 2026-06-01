@@ -28,6 +28,7 @@ import openjdk.tools.sjavac.pubapi.PubApi;
 public class CompilationSubResult {
 
     public Result result;
+    public String stdout = "";
     public String stderr = "";
 
     public Map<String, Set<URI>> packageArtifacts = new HashMap<>();
