@@ -93,7 +93,7 @@ class GradleBuildService :
    * client.
    */
   private var _toolingApiClient: ForwardingToolingApiClient? = null
-  private var toolingServerRunner: ToolingServerRunner? = null
+  private var toolingServerRunner: InProcessToolingRunner? = null
   private var outputReaderJob: Job? = null
   private var notificationManager: NotificationManager? = null
   private var server: IToolingApiServer? = null
@@ -749,7 +749,7 @@ class GradleBuildService :
   internal fun startToolingServer(listener: OnServerStartListener?) {
     if (toolingServerRunner?.isStarted != true) {
       val envs = TermuxShellEnvironment().getEnvironment(this, false)
-      toolingServerRunner = ToolingServerRunner(listener, this).also { it.startAsync(envs) }
+      toolingServerRunner = InProcessToolingRunner(listener, this).also { it.startAsync(envs) }
       return
     }
 
