@@ -9,15 +9,15 @@
 
 package openjdk.tools.sjavac.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,11 +45,13 @@ public class ServerMain {
                 new AutoFlushWriter(new OutputStreamWriter(System.out)),
                 new AutoFlushWriter(new OutputStreamWriter(System.err))));
 
-        // Extract server configuration from args
-        String startServerArg = Arrays.stream(args)
-                .filter(a -> a.startsWith("--startserver:"))
-                .findFirst()
-                .orElse(null);
+        String startServerArg = null;
+        for (String a : args) {
+            if (a.startsWith("--startserver:")) {
+                startServerArg = a;
+                break;
+            }
+        }
 
         if (startServerArg == null) {
             Log.error("Missing --startserver: argument");
@@ -67,52 +69,62 @@ public class ServerMain {
             return Result.CMDERR.exitCode;
         }
 
+        ServerSocket serverSocket = null;
         try {
             PortFile portFile = SjavacServer.getPortFile(portfileName);
             Sjavac sjavac = new PooledSjavac(new SjavacImpl(), poolsize);
 
-            try (ServerSocket serverSocket = new ServerSocket()) {
-                serverSocket.bind(new InetSocketAddress(InetAddress.getByName(null), 0));
-                int port = serverSocket.getLocalPort();
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(InetAddress.getByName(null), 0));
+            int port = serverSocket.getLocalPort();
 
-                // Write port to portfile
-                portFile.lock();
-                java.io.RandomAccessFile raf = new java.io.RandomAccessFile(portfileName, "rw");
-                raf.setLength(0);
-                raf.writeBytes(String.valueOf(port) + "\n");
-                raf.close();
-                portFile.unlock();
+            java.io.RandomAccessFile raf = new java.io.RandomAccessFile(portfileName, "rw");
+            raf.setLength(0);
+            raf.writeBytes(String.valueOf(port) + "\n");
+            raf.close();
 
-                Log.debug("Sjavac server listening on port " + port);
+            Log.debug("Sjavac server listening on port " + port);
 
-                long lastActivity = System.currentTimeMillis();
-                serverSocket.setSoTimeout(1000);
+            long lastActivity = System.currentTimeMillis();
+            serverSocket.setSoTimeout(1000);
 
-                ExecutorService executor = Executors.newFixedThreadPool(poolsize);
+            ExecutorService executor = Executors.newFixedThreadPool(poolsize);
 
-                while ((System.currentTimeMillis() - lastActivity) < keepalive * 1000L) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        lastActivity = System.currentTimeMillis();
-                        executor.submit(() -> handleRequest(socket, sjavac));
-                    } catch (java.net.SocketTimeoutException e) {
-                        // normal timeout, loop again
-                    }
+            while ((System.currentTimeMillis() - lastActivity) < keepalive * 1000L) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    lastActivity = System.currentTimeMillis();
+                    final Socket s = socket;
+                    executor.submit(new Runnable() {
+                        public void run() {
+                            handleRequest(s, sjavac);
+                        }
+                    });
+                } catch (java.net.SocketTimeoutException e) {
+                    // normal timeout, loop again
                 }
-
-                executor.shutdown();
-                sjavac.shutdown();
             }
+
+            executor.shutdown();
+            sjavac.shutdown();
         } catch (IOException e) {
             Log.error("Server error: " + e.getMessage());
             return Result.ERROR.exitCode;
+        } finally {
+            if (serverSocket != null) {
+                try {
+                    serverSocket.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
 
         return Result.OK.exitCode;
     }
 
     private static void handleRequest(Socket socket, Sjavac sjavac) {
-        try (socket) {
+        try {
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -127,6 +139,12 @@ public class ServerMain {
             out.println(SjavacServer.LINE_TYPE_RC + ":" + result.name());
         } catch (Exception e) {
             Log.error("Error handling client request: " + e.getMessage());
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
     }
 }
