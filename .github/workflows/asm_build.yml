@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   build_release_apk:
-    name: Build Debug APK
+    name: Build Release APK
     runs-on: ubuntu-latest
     steps:
       - name: Cancel previous runs
@@ -60,11 +60,11 @@ jobs:
           echo "signing.storePassword=123456" >> local.properties
           echo "signing.keyAlias=AndroidCS" >> local.properties
           echo "signing.keyPassword=123456" >> local.properties
-      - name: Assemble Debug APK
+      - name: Assemble Release APK
         env:
           SIGNING_STORE_PASSWORD: "123456"
           SIGNING_KEY_PASSWORD: "123456"
-        run: ./gradlew :core:app:assembleDebug
+        run: ./gradlew :core:app:assembleRelease
       - name: Get version name
         id: version
         run: |
@@ -77,13 +77,13 @@ jobs:
           tag_name: v${{ steps.version.outputs.name }}-build.${{ github.run_number }}
           name: "v${{ steps.version.outputs.name }} (Build #${{ github.run_number }})"
           body: |
-            **Automated debug build**
+            **Automated release build (R8 minified)**
             - Branch: `${{ github.ref_name }}`
             - Commit: `${{ github.sha }}`
             - Run: #${{ github.run_number }}
           draft: false
           prerelease: true
           files: |
-            core/app/build/outputs/apk/debug/*.apk
+            core/app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
