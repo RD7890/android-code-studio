@@ -290,8 +290,7 @@ dependencies {
   implementation(projects.xml.lsp)
   implementation(projects.xml.utils)
 
-  // This is to build the tooling-api-impl project before the app is built
-  // So we always copy the latest JAR file to assets
-  compileOnly(projects.tooling.impl)
+  // tooling.impl is now bundled in-process (single JVM) instead of spawning a separate process
+  implementation(projects.tooling.impl)
   
 }
