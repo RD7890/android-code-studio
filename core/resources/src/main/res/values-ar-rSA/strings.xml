@@ -412,13 +412,7 @@
   <string name="msg_codeaction_failed">فشلت في تنفيذ الإجراء.</string>
   <string name="idepref_devOptions_enableLogsender_title">تمكين مرسل السجلات.</string>
   <string name="idepref_devOptions_enableLogsender_summary">عند التعطيل، لن يتم عرض سجلات التطبيقات في AndroidIDE.</string>
-  <string name="title_build_variants">Build variants</string>
-  <string name="title_apply">Apply</string>
-  <string name="title_discard">Discard</string>
-  <string name="msg_build_variants_fetch_failed">Failed to fetch build variants</string>
-  <string name="title_choose_application">Choose application</string>
-  <string name="err_selected_variant_not_found">Selected build variant not found</string>
-  <string name="title_disconnect_log_senders">Disconnect log senders</string>
+
   <string name="title_begin_long_select">Begin long select</string>
   <string name="idepref_editor_stickScroll_title">Sticky scroll</string>
   <string name="idepref_editor_stickyScroll_summary">Show the current scope at the top while scrolling the editor.</string>
