@@ -39,7 +39,7 @@ import com.tom.rv2ide.projects.builder.BuildService
 import com.tom.rv2ide.projects.internal.ProjectManagerImpl
 import com.tom.rv2ide.resources.R
 import com.tom.rv2ide.services.ToolingServerNotStartedException
-import com.tom.rv2ide.services.builder.ToolingServerRunner.OnServerStartListener
+import com.tom.rv2ide.services.builder.InProcessToolingRunner.OnServerStartListener
 import com.tom.rv2ide.tasks.ifCancelledOrInterrupted
 import com.tom.rv2ide.tasks.runOnUiThread
 import com.tom.rv2ide.tooling.api.ForwardingToolingApiClient
@@ -79,7 +79,7 @@ import org.slf4j.LoggerFactory
  * @author Akash Yadav
  */
 class GradleBuildService :
-    Service(), BuildService, IToolingApiClient, ToolingServerRunner.Observer {
+    Service(), BuildService, IToolingApiClient, InProcessToolingRunner.Observer {
 
   private var mBinder: GradleServiceBinder? = null
   private var isToolingServerStarted = false
