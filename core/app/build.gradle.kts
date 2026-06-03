@@ -43,6 +43,7 @@ buildscript {
 }
 
 configurations.all {
+  exclude(group = "xerces", module = "xercesImpl")
   resolutionStrategy {
     force("com.google.guava:guava:32.1.3-android")
     eachDependency {
